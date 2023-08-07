@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<App /> should render and match the snapshot 1`] = `
+<BrowserRouter>
+  <Helmet
+    defaultTitle="ClaimKitty"
+    defer={true}
+    encodeSpecialCharacters={true}
+    htmlAttributes={
+      Object {
+        "lang": undefined,
+      }
+    }
+    prioritizeSeoTags={false}
+    titleTemplate="ClaimKitty"
+  />
+  <LoadingOverlay>
+    <Switch>
+      <Route
+        component={[Function]}
+        exact={true}
+        path="/"
+      />
+      <Route
+        component={[Function]}
+        exact={true}
+        path="/app"
+      />
+      <Route
+        component={[Function]}
+        exact={true}
+        path="/user"
+      />
+      <Route
+        component={[Function]}
+        exact={true}
+        path="/owner"
+      />
+      <Route
+        component={[Function]}
+      />
+    </Switch>
+  </LoadingOverlay>
+  <Memo(l) />
+</BrowserRouter>
+`;

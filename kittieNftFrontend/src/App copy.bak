@@ -1,0 +1,327 @@
+import './App.css';
+
+import * as React from 'react';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useWeb3React } from '@web3-react/core';
+import { useEffect, useState } from 'react';
+import { injected } from './blockchain/metamaskConnector';
+import NodeManagerAbi from "./blockchain/abi/NodeManager.json";
+import { CardContent, Grid } from '@mui/material';
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import Params from "./blockchain/chainParams";
+
+
+
+const SupportedChainId = {
+  // BSC
+  AVALANCHE_MAINNET: 43114,
+  AVALANCHE_TESTNET: 43113,
+  AVALANCHE_HEX_MAINNET: "A86A",
+  AVALANCHE_HEX_TESTNET: "A869",
+};
+
+const NodeManagerAddress = {
+  [SupportedChainId.AVALANCHE_HEX_MAINNET]: "0xF193c3090aF70BC86c0c38BEBf349fA39762F6dE",
+  [SupportedChainId.AVALANCHE_HEX_TESTNET]: "0xF193c3090aF70BC86c0c38BEBf349fA39762F6dE",
+};
+
+const PonziXAddress = {
+  [SupportedChainId.AVALANCHE_HEX_MAINNET]: "0x629C4607C42A018E11416BB6f7B6adD3B4F03384",
+  [SupportedChainId.AVALANCHE_HEX_TESTNET]: "0x629C4607C42A018E11416BB6f7B6adD3B4F03384",
+};
+
+
+function App() {
+  const { active, account, library, activate, deactivate, chainId } =
+    useWeb3React();
+
+
+
+  const [countTotal, setCountTotal] = useState(0);
+  const [myNodesNumber, setMyNodesNumber] = useState(0);
+  const [claimableAmount, setClaimableAmount] = useState(0);
+
+  let nodeRewardsContract: any;
+
+  const getNodesData = async () => {
+    nodeRewardsContract
+      .countTotal()
+      .call()
+      .then((res: any) => {
+        console.log("res", res);
+        setCountTotal(res);
+      });
+
+    nodeRewardsContract
+      .countOfUser(account)
+      .call()
+      .then((res: any) => {
+        console.log("res", res);
+        setMyNodesNumber(res);
+      });
+
+    nodeRewardsContract
+      .claimable(account)
+      .call()
+      .then((res: any) => {
+        console.log("res", res);
+        setClaimableAmount(res);
+      });
+  };
+
+  useEffect(() => {
+
+    // get chainId from SupportedChainId
+
+
+
+
+
+
+    if (account && library && chainId) {
+      console.log("chainId", chainId);
+
+      const currentChainParams = Params.find((e: any) => e.chainId == chainId);
+      const chainIdHex = currentChainParams?.chainIdHex.slice(2);
+
+      console.log("currentChainParams", currentChainParams);
+      //console.log("NodeManagerAddress[chainId]", NodeManagerAddress[chainIdHex]);
+      console.log("NodeManagerAddress", NodeManagerAddress);
+
+      if (currentChainParams !== undefined && chainIdHex != undefined && NodeManagerAddress[chainIdHex] !== undefined) {
+
+        console.log("NodeManagerAddress[currentChainParams?.chainId]", NodeManagerAddress[chainIdHex]);
+
+        nodeRewardsContract = new library.eth.Contract(
+          NodeManagerAbi,
+          NodeManagerAddress[currentChainParams.chainIdHex]
+        );
+
+        getNodesData().then(() => {
+          console.log("done");
+        });
+
+        console.log("account", account);
+        console.log("library", library);
+      }
+    }
+  }, [account]);
+
+  useEffect(() => {
+    const isWalletConnected = localStorage.getItem('isWalletConnected');
+    const connector = localStorage.getItem('connector');
+    if (isWalletConnected === 'true' && connector === 'injected') {
+      activate(injected);
+    }
+  }, [active]);
+
+  useEffect(() => {
+    console.log({ chainId });
+  }, [chainId]);
+
+  async function connectMetamaks() {
+    try {
+      await activate(injected, undefined, true);
+      localStorage.setItem("connector", "injected");
+      localStorage.setItem("isWalletConnected", "true");
+    } catch (ex) {
+      console.log(ex);
+    }
+  }
+
+  function getWalletAbreviation(walletAddress: string | null | undefined): string {
+    if (walletAddress !== null && walletAddress !== undefined) {
+      return walletAddress.slice(0, 6) + "..." + walletAddress.slice(-4);
+    }
+    return ""
+  }
+
+  async function disconnect() {
+    try {
+      deactivate();
+      localStorage.setItem("isWalletConnected", "false");
+      localStorage.removeItem("connector");
+    } catch (ex) {
+      console.log(ex);
+    }
+  }
+
+  return (
+    <div className="App">
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              News
+            </Typography>
+            <Button variant="contained" color={active ? 'success' : 'inherit'} onClick={active ? disconnect : connectMetamaks}>        {active ? (
+              <span>
+                <b> {getWalletAbreviation(account)}</b>
+              </span>
+            ) : (
+              <span>Connect Wallet</span>
+            )}</Button>
+          </Toolbar>
+        </AppBar>
+
+        {/* Create Grid responsive for mobile with 6 cards, if the screen size is small split in 2 rows */}
+        <Grid container
+          spacing={2}
+          sx={{ mt: 2 }}
+          alignItems="center"
+          justifyContent="center">
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Total Nodes
+                </Typography>
+                <Typography variant="body2">
+                  {countTotal}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+
+                <Typography variant="h5" component="div">
+                  My Nodes
+                </Typography>
+                <Typography variant="body2">
+                  {myNodesNumber}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Claimable Amount
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Claimable Amount
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Claimable Amount
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={4} md={2}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Claimable Amount
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        </Grid>
+        {/* Create responsive grid with two cards */}
+        <Grid container
+          spacing={2}
+          sx={{ mt: 2 }}
+          alignItems="center"
+          justifyContent="center">
+          <Grid item xs={11} sm={11} md={6}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Create
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+          <Grid item xs={11} sm={11} md={6}>
+            <Card sx={{ borderRadius: '16px' }} >
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  My nodes
+                </Typography>
+                <Typography variant="body2">
+                  {claimableAmount}
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        </Grid>
+
+
+      </Box>
+    </div>
+  );
+}
+
+
+
+export default App;
