@@ -53,6 +53,15 @@ contract MerkleFactory is Ownable {
         IERC20(_token).transferFrom(msg.sender, address(newAirdrop), _amount);
     }
 
+    function getWeth() external view returns(address) {
+        return address(weth);
+    }
+
+    function getfeeValue() external view returns(uint256) {
+        return feeValue;
+    }
+
+
     function setFees(address payable _newAddress, uint256 _newFees) external onlyOwner {
         feeAddress = _newAddress;
         feeValue = _newFees;

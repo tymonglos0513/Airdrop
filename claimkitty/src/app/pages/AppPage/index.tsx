@@ -129,12 +129,12 @@ export function AppPage() {
     const jsonData = csvData;
     const airdropUuid = uuidv4();
     
-    axios
-      .post(`${DOMAIN_NAME}addAirdrop`, {
-        data: jsonData,
-        url: 'airdrops/' + airdropUuid,
-      })
-      .catch(error => console.error(error));
+    // axios
+    //   .post(`${DOMAIN_NAME}addAirdrop`, {
+    //     data: jsonData,
+    //     url: 'airdrops/' + airdropUuid,
+    //   })
+    //   .catch(error => console.error(error));
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
     const decimals =
@@ -177,7 +177,7 @@ export function AppPage() {
 
     try {
       if (isPayingToken === true) {
-        const wethAddress = await contract.weth();
+        const wethAddress = await contract.getWeth();
         const wethContract = new ethers.Contract(
           wethAddress,
           erc20ABI,
@@ -213,7 +213,7 @@ export function AppPage() {
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
       } else {
-        const feeValue = await contract.creatorFee();
+        const feeValue = await contract.getfeeValue();
         setLoadingMessage('Confirm Transaction');
         const options = {
           value:
